@@ -204,7 +204,7 @@ class XLSalesReportGenerator:
             msg['From'] = self.email_config['sender_email']
             msg['To'] = ', '.join(recipient_list)
             msg['Subject'] = f"XL Sales Report - {datetime.now().strftime('%Y-%m-%d')}"
-            #msg['cc'] = ', '.join(cc_recipient_list)
+            msg['cc'] = ', '.join(cc_recipient_list)
 
             # Email body
             body = f"""
@@ -308,8 +308,8 @@ if __name__ == "__main__":
         'christy.lau@my.lkk.com',
         'phillip.tan@my.lkk.com']
 
-    recipients = ['leezhenglin95@gmail.com']
-    cc_recipients = ['elvis@lshworld.com',
+    #recipients = ['leezhenglin95@gmail.com']
+    cc_recipients = ['elvis.lim@lshworld.com',
                      'lissa@lshworld.com',
                      'taiyan@lshworld.com',
                         'shell_dc@lshworld.com',
