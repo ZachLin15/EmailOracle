@@ -50,80 +50,48 @@ class XLSalesReportGenerator:
         """Execute the sales report query"""
 
         # Convert the original SQL query to proper format
-        query = """
-        SET ECHO OFF
-SET TERMOUT off
-set linesize 10000
-set underline off
-set headsep off
-set colsep ,
-set pagesize 4000
-set trimspool on
-set embedded on
-set feedback off
-column dcol new_value mydate noprint
-select to_char(sysdate,'YYYYMMDD') dcol from dual;
-column ItemCode format 999999999999 heading "Item Code"
-column ItemDesc format a100 heading "ItemDesc"
-COLUMN Productcode1 FORMAT 99999999999 HEADING "Productcode1"
-column LotNUm format a50 heading "LotNUm"
-column Qty format 999999999 heading "Qty"
-column Cost format 999999999 heading "Cost"
-column SellingPrice format 999999999 heading "SellingPrice"
-column Value format 999999999 heading "Value"
-column Ware format a15 heading "Ware"
-column SalesChannel format a15 heading "SalesChannel"
-column BusChannel format a15 heading "BusChannel"
-column ProdChannel format a15 heading "ProdChannel"
-column StkType format a15 heading "StkType"
-column UOm format a15 heading "UOm"
-column ditrib format a15 heading "ditrib"
-COLUMN CTN FORMAT 99999 HEADING "CTNQTY"
-column EXPDATE format DATE heading "EXPDATE"
-column onhANDdATE format DATE heading "onhANDdATE"
-column dcol new_value mydate noprint
-SPOOL C:/NESTLE/NSBXTPLSH.&mydate..csv
-SELECT
-'LSH',
-to_char(sysdate,'YYYYMMDD') onhANDdATE,
-'5052026   ' ditrib,
-substr(mast.segment1,3,30) "ItemDesc",
-sum(QTY.primary_transaction_quantity) Qty,
-sum(QTY.primary_transaction_quantity)*CST.item_cost Value,
-0 Cost,
-0 SellingPrice,
-'M' Ware ,
-'11' SalesChannel,
-'13' BusChannel,
-' ' ProdChannel,
-' ' StkType,
-substr(mast.segment1,3,30) "Item Code",
-CASE  
-  WHEN INSTR(mast.description, '-') > 0 THEN
-    SUBSTR(mast.description, 1, LEAST(INSTR(mast.description, '-') - 1, 80))
-  ELSE 
-    SUBSTR(mast.description, 1, 80)
-END AS "Item Description",
-CASE 
-  WHEN INSTR(mast.description, '-') > 0 THEN 
-    SUBSTR(mast.description, INSTR(mast.description, '-') + 1, 80)
-  ELSE 
-    SUBSTR(mast.description, 1, 80)
-END AS "Combine Packing",
-to_char(sysdate+360,'YYYYMMDD') EXPDATE
-FROM 
-Mtl_System_Items Mast,
-Mtl_Onhand_Quantities_Detail Qty,
-cst_item_costs CST 
+        query = '''
+SELECT DISTINCT
+    reps.name AS SMCODE,
+    HCA.CUST_ACCOUNT_ID AS CUSTID,
+    TRIM(hp.party_name) AS CUSTNAME
+FROM
+    oe_order_lines_all OEL,
+    OE_ORDER_HEADERS_ALL OEH,
+    RA_CUSTOMER_TRX_ALL RCT,
+    RA_CUSTOMER_TRX_LINES_ALL rctl,
+    HZ_CUST_SITE_USES_ALL HCSU,
+    HZ_CUST_ACCT_SITES_ALL HCAS,
+    HZ_CUST_ACCOUNTS HCA,
+    HZ_PARTY_SITES HPS,
+    HZ_PARTIES HP,
+    HZ_LOCATIONS HL,
+    ra_salesreps_all reps,
+    MTL_SYSTEM_ITEMS_fvl MSI,
+    mtl_uom_class_conversions convR
 WHERE
-Qty.Inventory_Item_Id = Mast.Inventory_Item_Id
-and mast.inventory_item_id= CST.inventory_item_id
-And Mast.Organization_Id='82'
-and cst.Organization_Id='82'
-AND MAST.SEGMENT1 LIKE 'XN%'
-group by MAST.attribute8  ,Mast.segment1 ,MAST.PRIMARY_UOM_CODE,CST.item_cost,mast.description
-/
-        """
+    OEH.HEADER_ID = OEL.HEADER_ID
+    AND RCT.INTERFACE_HEADER_ATTRIBUTE1 = TO_NUMBER(OEH.ORDER_NUMBER)
+    AND TRUNC(RCT.TRX_DATE) BETWEEN TO_DATE('01-MAY-2020', 'DD-MON-YYYY') AND TO_DATE('30-JUN-2022', 'DD-MON-YYYY')
+    AND TO_NUMBER(TRIM(rctl.interface_line_attribute6)) = OEL.LINE_ID
+    AND RCTL.CUSTOMER_TRX_ID = RCT.CUSTOMER_TRX_ID
+    AND MSI.INVENTORY_ITEM_ID = RCTL.INVENTORY_ITEM_ID
+    AND reps.SALESREP_ID = OEL.SALESREP_ID
+    AND HCSU.SITE_USE_ID = rct.ship_to_site_use_id
+    AND HCSU.CUST_ACCT_SITE_ID = HCAS.CUST_ACCT_SITE_ID
+    AND HCAS.CUST_ACCOUNT_ID = HCA.CUST_ACCOUNT_ID
+    AND HPS.PARTY_SITE_ID = HCAS.PARTY_SITE_ID
+    AND HCA.PARTY_ID = Hp.PARTY_ID
+    AND HPS.PARTY_ID = HP.PARTY_ID
+    AND HCAS.PARTY_SITE_ID = HPS.PARTY_SITE_ID
+    AND HPS.LOCATION_ID = HL.LOCATION_ID
+    AND MSI.segment1 LIKE 'ZF%'
+    AND oel.invoiced_quantity <> 0
+    AND rctl.description NOT LIKE '100%'
+    AND MSI.ORGANIZATION_ID = 82
+    AND MSI.INVENTORY_ITEM_ID = convR.INVENTORY_ITEM_ID
+
+'''
 
         try:
             logger.info("Executing sales query...")
@@ -140,10 +108,10 @@ group by MAST.attribute8  ,Mast.segment1 ,MAST.PRIMARY_UOM_CODE,CST.item_cost,ma
         try:
             if filename is None:
                 current_date = datetime.now().strftime('%Y%m%d')
-                filename = f"XLSALES_{current_date}.xlsx"
+                filename = f"NSBXTPLSH_{current_date}.xlsx"
 
             # Create directory if it doesn't exist
-            output_dir = "C:/XLSALES"
+            output_dir = "C:/Nestle"
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
 
@@ -189,6 +157,14 @@ group by MAST.attribute8  ,Mast.segment1 ,MAST.PRIMARY_UOM_CODE,CST.item_cost,ma
 
     def send_email(self, excel_filepath, recipient_list,cc_recipient_list):
         """Send email with Excel attachment"""
+        current_date = datetime.now().strftime('%Y%m%d')
+        filename = f"NSBXTPLSH_{current_date}.xlsx"
+
+        attachment_filepaths = [
+            f"C:/NESTLE/NSTXTPLSH_{current_date}.xlsx",  # Example XLSX file 1
+            f"C:/NESTLE/NSBXTPLSH_{current_date}.xlsx",  # Example XLSX file 2
+            f"C:/NESTLE/NCMXTPLSH_{current_date}.xlsx",  # Another XLSX file 3
+        ]
         try:
             # Create message
             msg = MIMEMultipart()
@@ -258,7 +234,7 @@ group by MAST.attribute8  ,Mast.segment1 ,MAST.PRIMARY_UOM_CODE,CST.item_cost,ma
             excel_filepath = self.export_to_excel(df)
 
             # Send email
-            #self.send_email(excel_filepath, recipient_list,cc_recipient)
+            #@self.send_email(excel_filepath, recipient_list,cc_recipient)
 
             logger.info("Report generation and email sending completed successfully")
 
@@ -293,18 +269,22 @@ if __name__ == "__main__":
 
 
     # Recipients list
-    recipients = [
-        'customer_service@lkk.com',
-        'tony.loh@my.lkk.com',
-        'christy.lau@my.lkk.com',
-        'phillip.tan@my.lkk.com']
+    cc_recipients = [
+        'zhenglin@limsianghuat.com']
 
 
-    cc_recipients = ['elvis@lshworld.com',
-                     'lissa@lshworld.com',
-                     'taiyan@lshworld.com',
-                        'shell_dc@lshworld.com',
-                     'amore@lshworld.com','annie@lshworld.com']
+    recipients = ['BoonHua.Ong@SG.nestle.com',
+                     'Valane@lshworld.com',
+                     'Lily@lshworld.com',
+                     'amore@lshworld.com',
+                     'annie@lshworld.com',
+                     'SGSINBusinessSolutionsSupport@internal.nestle.com',
+                     'Steven.Tan@SG.nestle.com',
+                     'Adrian.Ang@sg.nestle.com',
+                    'shell_dc@lshworld.com',
+                     'leezhenglin95@gmail.com']
+
+
 
 
 
