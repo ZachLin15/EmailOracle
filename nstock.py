@@ -192,15 +192,16 @@ GROUP BY
             msg.attach(MIMEText(body, 'plain'))
 
             # Attach Excel file
-            with open(excel_filepath, "rb") as attachment:
-                part = MIMEBase('application', 'octet-stream')
-                part.set_payload(attachment.read())
-                encoders.encode_base64(part)
-                part.add_header(
-                    'Content-Disposition',
-                    f'attachment; filename= {os.path.basename(excel_filepath)}'
-                )
-                msg.attach(part)
+            for filepath in attachment_filepaths:
+                with open(excel_filepath, "rb") as attachment:
+                    part = MIMEBase('application', 'octet-stream')
+                    part.set_payload(attachment.read())
+                    encoders.encode_base64(part)
+                    part.add_header(
+                        'Content-Disposition',
+                        f'attachment; filename= {os.path.basename(filepath)}'
+                    )
+                    msg.attach(part)
 
             # Send email
             server = smtplib.SMTP(self.email_config['smtp_server'], self.email_config['smtp_port'])
