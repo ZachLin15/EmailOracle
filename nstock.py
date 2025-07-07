@@ -172,14 +172,14 @@ GROUP BY
             msg = MIMEMultipart()
             msg['From'] = self.email_config['sender_email']
             msg['To'] = ', '.join(recipient_list)
-            msg['Subject'] = f"XL Sales Report - {datetime.now().strftime('%Y-%m-%d')}"
+            msg['Subject'] = f"Nestle Sales Report - {datetime.now().strftime('%Y-%m-%d')}"
             #msg['cc'] = ', '.join(cc_recipient_list)
 
             # Email body
             body = f"""
             Dear Team,
 
-            Please find attached the XL Sales Report for {datetime.now().strftime('%B %Y')}.
+            Please find attached the Nestle Sales Report for {datetime.now().strftime('%B %Y')}.
 
             Report Details:
             - Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
