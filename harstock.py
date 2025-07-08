@@ -108,7 +108,7 @@ WHERE
         try:
             if filename is None:
                 current_date = datetime.now().strftime('%Y%m%d')
-                filename = f"NSBXTPLSH_{current_date}.xlsx"
+                filename = f"NCMXTPLSH_{current_date}.xlsx"
 
             # Create directory if it doesn't exist
             output_dir = "C:/Nestle"
