@@ -306,7 +306,8 @@ if __name__ == "__main__":
         'customer_service@lkk.com',
         'tony.loh@my.lkk.com',
         'christy.lau@my.lkk.com',
-        'phillip.tan@my.lkk.com']
+        'phillip.tan@my.lkk.com',
+       ' lillian.wong@my.lkk.com']
 
     #recipients = ['leezhenglin95@gmail.com']
     cc_recipients = ['elvis.lim@lshworld.com',

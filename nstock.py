@@ -237,7 +237,7 @@ GROUP BY
             excel_filepath = self.export_to_excel(df)
 
             # Send email
-            self.send_email(excel_filepath, recipient_list,cc_recipient)
+            #self.send_email(excel_filepath, recipient_list,cc_recipient)
 
             logger.info("Report generation and email sending completed successfully")
 
@@ -277,7 +277,7 @@ if __name__ == "__main__":
 
 
     recipients = ['BoonHua.Ong@SG.nestle.com',
-                     'Valane@lshworld.com',
+                     'MIckey@lshworld.com',
                      'Lily@lshworld.com',
                      'amore@lshworld.com',
                      'annie@lshworld.com',
