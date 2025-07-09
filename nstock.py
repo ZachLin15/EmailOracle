@@ -96,76 +96,38 @@ GROUP BY
 '''
 
         try:
+            current_date_str = datetime.now().strftime('%Y%m%d')
+            filename = f'C:/NESTLE/NSBXTPLSH_{current_date_str}.csv'
             logger.info("Executing sales query...")
             df = pd.read_sql(query, connection)
             logger.info(f"Query executed successfully. Retrieved {len(df)} records")
-            return df
+            string_columns = df.select_dtypes(include='object').columns
+            for col in string_columns:
+                df[col] = df[col].astype(str).str.rstrip().replace('None',
+                                                                   None)  # Replace 'None' string back to actual None
+            df.to_csv(
+                filename,
+                sep=',',  # Use tab as separator
+                index=False,  # Include the DataFrame index as the first column
+                header=True,  # Include column headers
+                encoding='utf-8'  # Specify encoding
+            )
+            return ''
 
         except Exception as e:
             logger.error(f"Error executing query: {e}")
             raise
 
-    def export_to_excel(self, df, filename=None):
-        """Export DataFrame to Excel file"""
-        try:
-            if filename is None:
-                current_date = datetime.now().strftime('%Y%m%d')
-                filename = f"NSBXTPLSH_{current_date}.xlsx"
 
-            # Create directory if it doesn't exist
-            output_dir = "C:/Nestle"
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
 
-            filepath = os.path.join(output_dir, filename)
-
-            # Create Excel writer object
-            with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
-                # Write data to Excel
-                df.to_excel(writer, sheet_name='Sales Report', index=False)
-
-                # Get workbook and worksheet
-                workbook = writer.book
-                worksheet = writer.sheets['Sales Report']
-
-                # Auto-adjust column widths
-                for column in worksheet.columns:
-                    max_length = 0
-                    column_letter = column[0].column_letter
-                    for cell in column:
-                        try:
-                            if len(str(cell.value)) > max_length:
-                                max_length = len(str(cell.value))
-                        except:
-                            pass
-                    adjusted_width = min(max_length + 2, 50)
-                    worksheet.column_dimensions[column_letter].width = adjusted_width
-
-                # Add header formatting
-                from openpyxl.styles import Font, PatternFill
-                header_font = Font(bold=True)
-                header_fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
-
-                for cell in worksheet[1]:
-                    cell.font = header_font
-                    cell.fill = header_fill
-
-            logger.info(f"Excel file created successfully: {filepath}")
-            return filepath
-
-        except Exception as e:
-            logger.error(f"Error creating Excel file: {e}")
-            raise
-
-    def send_email(self, excel_filepath, recipient_list,cc_recipient_list):
+    def send_email(self, recipient_list,cc_recipient_list):
         """Send email with Excel attachment"""
         current_date = datetime.now().strftime('%Y%m%d')
-        filename = f"NSBXTPLSH_{current_date}.xlsx"
 
         attachment_filepaths = [
-            f"C:/NESTLE/NSTXTPLSH_{current_date}.xlsx",  # Example XLSX file 1
-            f"C:/NESTLE/NSBXTPLSH_{current_date}.xlsx",  # Example XLSX file 2
-            f"C:/NESTLE/NCMXTPLSH_{current_date}.xlsx",  # Another XLSX file 3
+            f"C:/NESTLE/NSTXTPLSH_{current_date}.csv",  # Example XLSX file 1
+            f"C:/NESTLE/NSBXTPLSH_{current_date}.csv",  # Example XLSX file 2
+            f"C:/NESTLE/NCMXTPLSH_{current_date}.csv",  # Another XLSX file 3
         ]
         try:
             # Create message
@@ -183,7 +145,7 @@ GROUP BY
 
             Report Details:
             - Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-            - File: {os.path.basename(excel_filepath)}
+            - File: {attachment_filepaths}
 
             Best regards,
             Sales Reporting System
@@ -193,7 +155,7 @@ GROUP BY
 
             # Attach Excel file
             for filepath in attachment_filepaths:
-                with open(excel_filepath, "rb") as attachment:
+                with open(filepath, "rb") as attachment:
                     part = MIMEBase('application', 'octet-stream')
                     part.set_payload(attachment.read())
                     encoders.encode_base64(part)
@@ -229,15 +191,13 @@ GROUP BY
             # Execute query
             df = self.execute_sales_query(connection)
 
-            if df.empty:
-                logger.warning("No data found for the current period")
-                return
+
 
             # Export to Excel
-            excel_filepath = self.export_to_excel(df)
+            #excel_filepath = self.export_to_excel(df)
 
             # Send email
-            #self.send_email(excel_filepath, recipient_list,cc_recipient)
+            self.send_email(recipient_list,cc_recipient)
 
             logger.info("Report generation and email sending completed successfully")
 
@@ -277,7 +237,7 @@ if __name__ == "__main__":
 
 
     recipients = ['BoonHua.Ong@SG.nestle.com',
-                     'MIckey@lshworld.com',
+                     'Mickey@lshworld.com',
                      'Lily@lshworld.com',
                      'amore@lshworld.com',
                      'annie@lshworld.com',
@@ -286,6 +246,8 @@ if __name__ == "__main__":
                      'Adrian.Ang@sg.nestle.com',
                     'shell_dc@lshworld.com',
                      'leezhenglin95@gmail.com']
+    recipients = [
+        'zhenglin@limsianghuat.com']
 
 
 

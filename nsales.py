@@ -136,8 +136,23 @@ WHERE
 '''
 
         try:
+
+            current_date_str = datetime.now().strftime('%Y%m%d')
+            filename = f'C:/NESTLE/NSTXTPLSH_{current_date_str}.csv'
             logger.info("Executing sales query...")
             df = pd.read_sql(query, connection)
+            string_columns = df.select_dtypes(include='object').columns
+            for col in string_columns:
+                df[col] = df[col].astype(str).str.rstrip().replace('None',
+                                                               None)  # Replace 'None' string back to actual None
+                print(df.shape)
+            df.to_csv(
+                filename,
+                sep=',',  # Use tab as separator
+                index=False,  # Include the DataFrame index as the first column
+                header=True,  # Include column headers
+                encoding='utf-8'  # Specify encoding
+            )
             logger.info(f"Query executed successfully. Retrieved {len(df)} records")
             return df
 
@@ -145,57 +160,6 @@ WHERE
             logger.error(f"Error executing query: {e}")
             raise
 
-    def export_to_excel(self, df, filename=None):
-        """Export DataFrame to Excel file"""
-        try:
-            if filename is None:
-                current_date = datetime.now().strftime('%Y%m%d')
-                filename = f"NSTXTPLSH_{current_date}.xlsx"
-
-            # Create directory if it doesn't exist
-            output_dir = "C:/Nestle"
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-
-            filepath = os.path.join(output_dir, filename)
-
-            # Create Excel writer object
-            with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
-                # Write data to Excel
-                df.to_excel(writer, sheet_name='Sales Report', index=False)
-
-                # Get workbook and worksheet
-                workbook = writer.book
-                worksheet = writer.sheets['Sales Report']
-
-                # Auto-adjust column widths
-                for column in worksheet.columns:
-                    max_length = 0
-                    column_letter = column[0].column_letter
-                    for cell in column:
-                        try:
-                            if len(str(cell.value)) > max_length:
-                                max_length = len(str(cell.value))
-                        except:
-                            pass
-                    adjusted_width = min(max_length + 2, 50)
-                    worksheet.column_dimensions[column_letter].width = adjusted_width
-
-                # Add header formatting
-                from openpyxl.styles import Font, PatternFill
-                header_font = Font(bold=True)
-                header_fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
-
-                for cell in worksheet[1]:
-                    cell.font = header_font
-                    cell.fill = header_fill
-
-            logger.info(f"Excel file created successfully: {filepath}")
-            return filepath
-
-        except Exception as e:
-            logger.error(f"Error creating Excel file: {e}")
-            raise
 
     def send_email(self, excel_filepath, recipient_list,cc_recipient_list):
         """Send email with Excel attachment"""
@@ -265,7 +229,7 @@ WHERE
                 return
 
             # Export to Excel
-            excel_filepath = self.export_to_excel(df)
+            #excel_filepath = self.export_to_excel(df)
 
             # Send email
             #self.send_email(excel_filepath, recipient_list,cc_recipient)
@@ -308,7 +272,7 @@ if __name__ == "__main__":
 
 
     recipients = ['BoonHua.Ong@SG.nestle.com',
-                     'Valane@lshworld.com',
+                     'mickey@lshworld.com',
                      'Lily@lshworld.com',
                      'amore@lshworld.com',
                      'annie@lshworld.com',
@@ -384,13 +348,24 @@ def generate_report_only():
     report_generator = XLSalesReportGenerator(db_config, email_config)
 
     try:
+        current_date_str = datetime.now().strftime('%Y%m%d')
+        filename = f'C:/NESTLE/NSTXTPLSH{current_date_str}.csv'
         connection = report_generator.get_database_connection()
         df = report_generator.execute_sales_query(connection)
-        excel_filepath = report_generator.export_to_excel(df)
+        df[col] = df[col].astype(str).str.rstrip().replace('None', None)  # Replace 'None' string back to actual None
+        df.to_csv(
+            filename,
+            sep='\t',  # Use tab as separator
+            index=True,  # Include the DataFrame index as the first column
+            header=True,  # Include column headers
+            encoding='utf-8'  # Specify encoding
+        )
+        #excel_filepath = report_generator.export_to_excel(df)
         connection.close()
 
-        print(f"Report generated successfully: {excel_filepath}")
-        return excel_filepath
+
+        #print(f"Report generated successfully: {excel_filepath}")
+        return ''
 
     except Exception as e:
         print(f"Error: {e}")
