@@ -237,17 +237,15 @@ if __name__ == "__main__":
 
 
     recipients = ['BoonHua.Ong@SG.nestle.com',
-                     'Mickey@lshworld.com',
+                     'Micky@lshworld.com',
                      'Lily@lshworld.com',
                      'amore@lshworld.com',
                      'annie@lshworld.com',
                      'SGSINBusinessSolutionsSupport@internal.nestle.com',
                      'Steven.Tan@SG.nestle.com',
                      'Adrian.Ang@sg.nestle.com',
-                    'shell_dc@lshworld.com',
-                     'leezhenglin95@gmail.com']
-    recipients = [
-        'zhenglin@limsianghuat.com']
+                    'shell_dc@lshworld.com']
+
 
 
 

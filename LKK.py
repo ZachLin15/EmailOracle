@@ -314,7 +314,7 @@ if __name__ == "__main__":
                      'lissa@lshworld.com',
                      'taiyan@lshworld.com',
                         'shell_dc@lshworld.com',
-                     'amore@lshworld.com','annie@lshworld.com']
+                     'amore@lshworld.com','annie@lshworld.com','lily@lshworld.com']
 
 
 
