@@ -1,0 +1,95 @@
+set echo off
+set feedback off
+SET TERMOUT OFF
+--set heading off
+set linesize 20000
+set pagesize 20000
+SET UNDERLINE OFF
+SET HEADSEP OFF
+SET TRIMSPOOL ON
+SET EMBEDDED ON
+SET FEEBACK OFF
+SET TRIMOUT ON
+set colsep ','
+connect apps/apps@prod
+
+column dcol new_value mydate noprint
+select to_char(sysdate,'YYMM') dcol from dual;
+
+COLUMN Category FORMAT A30 HEADING "Category"
+COLUMN Class FORMAT A30 HEADING "Class"
+COLUMN CustomerName FORMAT A60 HEADING "CustomerName"
+COLUMN Brands FORMAT A20 HEADING "Brands"
+COLUMN ItemCode FORMAT A20 HEADING "ItemCode"
+COLUMN SKUDesciption FORMAT A100 HEADING "SKUDesciption"
+COLUMN PackSize FORMAT A20 HEADING "PackSize"
+column Unit format 99 heading "Unit"
+COLUMN TYPE FORMAT A15 HEADING "TYPE"
+COLUMN CHAIN FORMAT A20 HEADING "CHAIN"
+COLUMN SalesRep FORMAT A10 HEADING "SalesRep"
+COLUMN Addr1 FORMAT A150 HEADING "Addr1"
+COLUMN po FORMAT A150 HEADING "po"
+connect apps/apps@PROD
+
+COLUMN dt NEW_VALUE dt NOPRINT
+
+SELECT TO_CHAR(SYSDATE, 'YYMMDD') dt FROM DUAL;
+SPOOL C:\7DAYS\limsianghuat_&dt..csv
+
+SELECT
+    TO_CHAR(TRUNC(rctl.creation_date),'DD-MM-YYYY') "Invoice Date",
+    rct.trx_number "Invoice #",
+    oel.ship_to_org_id "Ship Code",
+    TRIM(hp.party_name) "Customer Name",
+    hl.postal_code "Postal Code",
+    TRIM(oel.ordered_item) "ItemCode",
+    TRIM(msi.DESCRIPTION) "SKUDesciption",
+    TRIM(reps.name) "SalesRep",
+    SUM(oel.invoiced_quantity * oel.unit_selling_price) "Sales Amount",
+    SUM(oel.invoiced_quantity) "QTY",
+    oel.order_quantity_uom "UOM",
+    TRIM(REPLACE(hl.address1, chr(44), ' ')) "Addr1"
+FROM
+    oe_order_lines_all OEL,
+    OE_ORDER_HEADERS_ALL OEH,
+    RA_CUSTOMER_TRX_ALL RCT,
+    RA_CUSTOMER_TRX_LINES_ALL rctl,
+    HZ_PARTY_SITES HPS,
+    HZ_PARTIES HP,
+    HZ_LOCATIONS HL,
+    ra_salesreps_all reps,
+    MTL_SYSTEM_ITEMS_B MSI
+WHERE
+    OEH.HEADER_ID = OEL.HEADER_ID
+    AND RCT.INTERFACE_HEADER_ATTRIBUTE1 = TO_NUMBER(OEH.ORDER_NUMBER)
+    AND TRUNC(RCT.trx_date) BETWEEN TRUNC(ADD_MONTHS(SYSDATE, 0), 'MM') AND TRUNC(LAST_DAY(SYSDATE))
+    AND RCTL.INTERFACE_LINE_ATTRIBUTE6 = OEL.LINE_ID
+    AND RCTL.CUSTOMER_TRX_ID = RCT.CUSTOMER_TRX_ID
+    AND MSI.INVENTORY_ITEM_ID = RCTL.INVENTORY_ITEM_ID
+    AND OEH.SALESREP_ID = REPS.SALESREP_ID
+    AND HPS.PARTY_SITE_ID = RCT.ship_to_site_use_id
+    AND HPS.PARTY_ID = HP.PARTY_ID
+    AND HPS.LOCATION_ID = HL.LOCATION_ID
+    AND MSI.segment1 LIKE 'Z7%'
+    AND oel.invoiced_quantity <> 0
+    AND rctl.description NOT LIKE '100%'
+    AND MSI.ORGANIZATION_ID = 82
+GROUP BY
+    TO_CHAR(TRUNC(rctl.creation_date),'DD-MM-YYYY'),
+    rct.trx_number,
+    oel.ship_to_org_id,
+    TRIM(hp.party_name),
+    hl.postal_code,
+    TRIM(oel.ordered_item),
+    TRIM(msi.DESCRIPTION),
+    TRIM(reps.name),
+    hl.address1,
+    oel.invoiced_quantity,
+    oel.order_quantity_uom,
+    msi.primary_uom_code
+/
+
+spool off
+set feedback on
+set heading on
+exit
