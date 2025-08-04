@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-def run_sqlplus_script_from_file(script_filename="7days.txt"):
+def run_sqlplus_script_from_file(script_filename="harcust.txt"):
     """
     Writes the provided SQL*Plus script content to a file and then executes it
     using sqlplus via subprocess.
@@ -40,7 +40,7 @@ def run_sqlplus_script_from_file(script_filename="7days.txt"):
             print("\nSQL*Plus script executed successfully.")
             # The CSV file will be generated at C:/NESTLE/NCMXTPLSH_YYYYMMDD.csv
             print("Check the specified SPOOL location for the generated CSV file:")
-            print("C:/7days/limsianghuat_YYYYMMDD.csv (YYYYMMDD will be current date)")
+            print("C:/NESTLE/LIMSIANGHUAT_YYYYMMDD.csv (YYYYMMDD will be current date)")
         else:
             print("\nSQL*Plus script execution failed or encountered warnings/errors.")
             print("Please review the 'SQL*Plus Standard Error' and 'Standard Output' above for details.")
@@ -63,4 +63,4 @@ def run_sqlplus_script_from_file(script_filename="7days.txt"):
 
 # Run the script
 if __name__ == "__main__":
-    run_sqlplus_script_from_file(r"C:\Users\USER\PycharmProjects\EmailOracle\7days.txt")
+    run_sqlplus_script_from_file(r"C:\Users\USER\PycharmProjects\EmailOracle\7Days.txt")

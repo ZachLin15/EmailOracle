@@ -1,3 +1,5 @@
+CONNECT apps/apps@192.168.200.179:1521/erpp
+
 set echo off
 set feedback off
 SET TERMOUT OFF
@@ -11,7 +13,7 @@ SET EMBEDDED ON
 SET FEEBACK OFF
 SET TRIMOUT ON
 set colsep ','
-connect apps/apps@prod
+
 
 column dcol new_value mydate noprint
 select to_char(sysdate,'YYMM') dcol from dual;
