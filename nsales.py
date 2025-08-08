@@ -56,42 +56,70 @@ SELECT
     '5052026' AS FixedValue, -- This is a fixed string literal
     RCT.SHIP_TO_SITE_USE_ID AS CustomerCode,
     SUBSTR(msi.segment1, 3, 30) AS Description, 
-    CASE
-        WHEN RCTL.DESCRIPTION NOT LIKE '%100.62%' THEN
-            CASE
-                WHEN rctl.uom_code <> MSI.PRIMARY_UOM_CODE THEN
-                    CASE
-                        WHEN rctl.quantity_invoiced > 0 THEN
-                            (SELECT conversion_rate * rctl.quantity_invoiced FROM mtl_uom_class_conversions WHERE inventory_item_id = msi.inventory_item_id AND to_uom_code = rctl.uom_code)
-                        ELSE
-                            (SELECT conversion_rate * rctl.quantity_credited FROM mtl_uom_class_conversions WHERE inventory_item_id = msi.inventory_item_id AND to_uom_code = rctl.uom_code)
-                    END
-                ELSE
-                    CASE
-                        WHEN RCTL.QUANTITY_INVOICED > 0 THEN
-                            RCTL.QUANTITY_INVOICED
-                        ELSE
-                            RCTL.QUANTITY_CREDITED
-                    END
-            END
-        ELSE
-            CASE
-                WHEN rctl.uom_code <> MSI.PRIMARY_UOM_CODE THEN
-                    CASE
-                        WHEN rctl.quantity_invoiced > 0 THEN
-                            (SELECT conversion_rate * 0 FROM mtl_uom_class_conversions WHERE inventory_item_id = msi.inventory_item_id AND to_uom_code = rctl.uom_code)
-                        ELSE
-                            (SELECT conversion_rate * 0 FROM mtl_uom_class_conversions WHERE inventory_item_id = msi.inventory_item_id AND to_uom_code = rctl.uom_code)
-                    END
-                ELSE
-                    CASE
-                        WHEN -RCTL.QUANTITY_INVOICED > 0 THEN
-                            0
-                        ELSE
-                            0
-                    END
-            END
-    END AS looseqty,
+CASE
+    WHEN RCTL.DESCRIPTION NOT LIKE '%100.62%' THEN
+        CASE
+            WHEN RCTL.UOM_CODE <> MSI.PRIMARY_UOM_CODE THEN
+                CASE
+                    WHEN RCTL.QUANTITY_INVOICED > 0 THEN
+                        CASE
+                            WHEN TRIM(MSI.SEGMENT1) = 'XN12496696' THEN
+                                NVL((
+                                    SELECT MAX(CONVERSION_RATE) * RCTL.QUANTITY_INVOICED
+                                    FROM MTL_UOM_CLASS_CONVERSIONS
+                                    WHERE INVENTORY_ITEM_ID = MSI.INVENTORY_ITEM_ID
+                                      AND TO_UOM_CODE = RCTL.UOM_CODE
+                                ), 0) * 500
+                            WHEN TRIM(MSI.SEGMENT1) = 'XN12499331' THEN
+                                NVL((
+                                    SELECT MAX(CONVERSION_RATE) * RCTL.QUANTITY_INVOICED
+                                    FROM MTL_UOM_CLASS_CONVERSIONS
+                                    WHERE INVENTORY_ITEM_ID = MSI.INVENTORY_ITEM_ID
+                                      AND TO_UOM_CODE = RCTL.UOM_CODE
+                                ), 0) * 24
+                            WHEN TRIM(MSI.SEGMENT1) = 'XN12231574' THEN
+                                NVL((
+                                    SELECT MAX(CONVERSION_RATE) * RCTL.QUANTITY_INVOICED
+                                    FROM MTL_UOM_CLASS_CONVERSIONS
+                                    WHERE INVENTORY_ITEM_ID = MSI.INVENTORY_ITEM_ID
+                                      AND TO_UOM_CODE = RCTL.UOM_CODE
+                                ), 0) * 10
+                            ELSE
+                                NVL((
+                                    SELECT MAX(CONVERSION_RATE) * RCTL.QUANTITY_INVOICED
+                                    FROM MTL_UOM_CLASS_CONVERSIONS
+                                    WHERE INVENTORY_ITEM_ID = MSI.INVENTORY_ITEM_ID
+                                      AND TO_UOM_CODE = RCTL.UOM_CODE
+                                ), 0)
+                        END
+                    ELSE
+                        NVL((
+                            SELECT MAX(CONVERSION_RATE) * RCTL.QUANTITY_CREDITED
+                            FROM MTL_UOM_CLASS_CONVERSIONS
+                            WHERE INVENTORY_ITEM_ID = MSI.INVENTORY_ITEM_ID
+                              AND TO_UOM_CODE = RCTL.UOM_CODE
+                        ), 0)
+                END
+            ELSE
+                CASE
+                    WHEN RCTL.QUANTITY_INVOICED > 0 THEN
+                        CASE
+                            WHEN TRIM(MSI.SEGMENT1) = 'XN12496696' THEN RCTL.QUANTITY_INVOICED * 500
+                            WHEN TRIM(MSI.SEGMENT1) = 'XN12499331' THEN RCTL.QUANTITY_INVOICED * 24
+                            WHEN TRIM(MSI.SEGMENT1) = 'XN12231574' THEN RCTL.QUANTITY_INVOICED * 10
+                            ELSE RCTL.QUANTITY_INVOICED
+                        END
+                    ELSE
+                        CASE
+                            WHEN TRIM(MSI.SEGMENT1) = 'XN12496696' THEN RCTL.QUANTITY_CREDITED * 500
+                            WHEN TRIM(MSI.SEGMENT1) = 'XN12499331' THEN RCTL.QUANTITY_CREDITED * 24
+                            WHEN TRIM(MSI.SEGMENT1) = 'XN12231574' THEN RCTL.QUANTITY_CREDITED * 10
+                            ELSE RCTL.QUANTITY_CREDITED
+                        END
+                END
+        END
+    ELSE 0
+END AS looseqty,
     RCTL.REVENUE_AMOUNT,
     REPS.NAME AS ESRCode,
     RCT.TRX_NUMBER AS InvoiceNum
@@ -131,8 +159,11 @@ WHERE
     -- Dates: Current month's data
     AND TRUNC(RCT.trx_date) BETWEEN TRUNC(SYSDATE, 'MM') AND LAST_DAY(SYSDATE)
     AND (RCTL.REVENUE_AMOUNT > 0 OR RCTL.REVENUE_AMOUNT < 0)
-    AND MSI.SEGMENT1 LIKE 'XN%'
-    AND RCT.SHIP_TO_SITE_USE_ID NOT LIKE '334587'
+  --  AND MSI.SEGMENT1 LIKE 'XN12496696%'
+  AND MSI.SEGMENT1 LIKE 'XN%'
+ --   AND RCT.SHIP_TO_SITE_USE_ID NOT LIKE '334587'
+    order by
+    RCT.trx_date
 '''
 
         try:
@@ -280,7 +311,7 @@ if __name__ == "__main__":
                      'Steven.Tan@SG.nestle.com',
                      'Adrian.Ang@sg.nestle.com',
                     'shell_dc@lshworld.com',
-                     'leezhenglin95@gmail.com']
+                    ]
 
 
 

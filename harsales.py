@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-def run_sqlplus_script_from_file(script_filename="harcust.txt"):
+def run_sqlplus_script_from_file(script_filename="HARSALES.txt"):
     """
     Writes the provided SQL*Plus script content to a file and then executes it
     using sqlplus via subprocess.
@@ -63,4 +63,5 @@ def run_sqlplus_script_from_file(script_filename="harcust.txt"):
 
 # Run the script
 if __name__ == "__main__":
-    run_sqlplus_script_from_file(r"C:\Users\USER\PycharmProjects\EmailOracle\HARCUST.txt")
+    run_sqlplus_script_from_file(r"C:\Users\USER\PycharmProjects\EmailOracle\HARSALES.txt")
+

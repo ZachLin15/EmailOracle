@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-def run_sqlplus_script_from_file(script_filename="7DAYS.txt"):
+def run_sqlplus_script_from_file(script_filename="XESALES.txt"):
     """
     Writes the provided SQL*Plus script content to a file and then executes it
     using sqlplus via subprocess.
@@ -53,7 +53,7 @@ def run_sqlplus_script_from_file(script_filename="7DAYS.txt"):
             print("\nSQL*Plus script executed successfully.")
             # The CSV file will be generated at C:/NESTLE/NCMXTPLSH_YYYYMMDD.csv
             print("Check the specified SPOOL location for the generated CSV file:")
-            print("C:/7days/limsianghuat_YYYYMMDD.csv (YYYYMMDD will be current date)")
+            print("C:/XESALES/XESALES.csv (YYYYMMDD will be current date)")
         else:
             print("\nSQL*Plus script execution failed or encountered warnings/errors.")
             print("Please review the 'SQL*Plus Standard Error' and 'Standard Output' above for details.")
@@ -76,10 +76,10 @@ def run_sqlplus_script_from_file(script_filename="7DAYS.txt"):
 
 # Run the script
 if __name__ == "__main__":
-    run_sqlplus_script_from_file(r"C:\Users\USER\PycharmProjects\EmailOracle\7DAYS.txt")
+    run_sqlplus_script_from_file(r"C:\Users\USER\PycharmProjects\EmailOracle\XESALES.txt")
     current_date_str = datetime.now().strftime('%y%m%d')
 
-    excel_filepath = f"C:\\7days\\limsianghuat_{current_date_str}.csv"
+    excel_filepath = f"C:\\XESALES\\XESALES.csv"
 
     # Email configuration
     email_config = {
@@ -89,17 +89,15 @@ if __name__ == "__main__":
         'sender_password': 'dpvqmxwsrxvxmbvr',  # Use app password for Gmail
         'use_tls': True
     }
-    recipients = ['oromeo.integration@crenergy.com.my',
-                  'boonwee.chew@muchicobakery.com',
-                  'carmen.lui@oromeo.com.my',
-                  ' cindy.yeo@oromeo.com.my',
-                  ' thiamhock.eu@oromeo.com.my',
-                  ' eunice.lim@oromeo.com.my',
-                  'Cy.lee@lshworld.com',
-                  'lissa@lshworld.com ',
-                  'amore@lshworld.com',
-                  'grace.chan@oromeo.com.my ',
-                  'zhenglin@limsianghuat.com'
+    recipients = [  'lissa@lshworld.com',
+                    'micky@lshworld.com',
+                    'lily@lshworld.com',
+                    'yeeWai.tai2 @ lipton.com',
+                    'colin.lin@t2tea.com',
+                    'elvis.lim@lshworld.com',
+                    'annie@lshworld.com',
+                    'amore@lshworld.com',
+                    'zhenglin@limsianghuat.com'
                   ]
 
     try:
@@ -107,14 +105,14 @@ if __name__ == "__main__":
         msg = MIMEMultipart()
         msg['From'] = email_config['sender_email']
         msg['To'] = ', '.join(recipients)
-        msg['Subject'] = f"7Days Sales Report - {datetime.now().strftime('%Y-%m-%d')}"
+        msg['Subject'] = f" Eketerra Sales Report - {datetime.now().strftime('%Y-%m-%d')}"
         # msg['cc'] = ', '.join(cc_recipient_list)
 
         # Email body
         body = f"""
         Dear Team,
 
-        Please find attached the 7Days Sales Report for {datetime.now().strftime('%B %Y')}.
+        Please find attached the Ekattera Sales Report for {datetime.now().strftime('%B %Y')}.
 
         Report Details:
         - Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -152,5 +150,4 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Error sending email: {e}")
         raise
-
     os.remove(excel_filepath)

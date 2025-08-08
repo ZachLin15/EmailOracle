@@ -258,8 +258,19 @@ if __name__ == "__main__":
     try:
         report_generator.generate_and_send_report(recipients,cc_recipients)
         print("Report generated and sent successfully!")
+
+        #REMOVE ALL SUCCESFULL FILES
+        current_date = datetime.now().strftime('%Y%m%d')
+        os.remove(f"C:/NESTLE/NSTXTPLSH_{current_date}.csv")
+        os.remove(f"C:/NESTLE/NSBXTPLSH_{current_date}.csv")
+        os.remove(f"C:/NESTLE/NCMXTPLSH_{current_date}.csv")
+        print("3files are deleted !")
+
+
     except Exception as e:
         print(f"Error: {e}")
+
+
 
 
 # Test database connection function

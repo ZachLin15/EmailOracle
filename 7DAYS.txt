@@ -1,3 +1,4 @@
+CONNECT apps/apps@192.168.200.179:1521/erpp
 set echo off
 set feedback off
 SET TERMOUT OFF
@@ -11,7 +12,6 @@ SET EMBEDDED ON
 SET FEEBACK OFF
 SET TRIMOUT ON
 set colsep ','
-connect apps/apps@prod
 
 column dcol new_value mydate noprint
 select to_char(sysdate,'YYMM') dcol from dual;
@@ -29,7 +29,7 @@ COLUMN CHAIN FORMAT A20 HEADING "CHAIN"
 COLUMN SalesRep FORMAT A10 HEADING "SalesRep"
 COLUMN Addr1 FORMAT A150 HEADING "Addr1"
 COLUMN po FORMAT A150 HEADING "po"
-connect apps/apps@PROD
+
 
 COLUMN dt NEW_VALUE dt NOPRINT
 
