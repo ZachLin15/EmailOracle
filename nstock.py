@@ -8,6 +8,7 @@ from email import encoders
 from datetime import datetime, date
 import os
 import logging
+from UpdateExpiryDate import find_best_match, ProcessData
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -195,6 +196,9 @@ GROUP BY
 
             # Export to Excel
             #excel_filepath = self.export_to_excel(df)
+
+            #Process DataFrame
+            ProcessData()
 
             # Send email
             self.send_email(recipient_list,cc_recipient)
