@@ -1,0 +1,192 @@
+CONNECT apps/apps@192.168.200.179:1521/erpp
+
+SET ECHO OFF
+SET TERMOUT OFF
+set linesize 4000
+set underline off
+set headsep off
+set colsep ,
+set pagesize 4000
+set trimspool on
+set embedded on
+set feedback off
+column dcol new_value mydate noprint
+select to_char(sysdate,'YYYYMMDD') dcol from dual;
+COLUMN DPCode FORMAT 9999999999 HEADING "DPCode"
+--COLUMN Invoicedate FORMAT 'YYYYMMDD' HEADING "Invoicedate"
+COLUMN OrderNum FORMAT 9999999999 HEADING "OrderNum"
+COLUMN InvoiceNum FORMAT 9999999999 HEADING "InvoiceNum"
+COLUMN CustomerCode FORMAT 999999999 HEADING "CustomerCode"
+COLUMN CustomerName FORMAT A60 HEADING "CustomerName"
+COLUMN ESRCode FORMAT A10 HEADING "ESRCode"
+COLUMN OrderLineNum FORMAT 999 HEADING "OrderLineNum"
+COLUMN Productcode FORMAT A60 HEADING "Productcode"
+COLUMN ProductDescription FORMAT A60 HEADING "ProductDescription"
+COLUMN PackingSize FORMAT A60 HEADING "PackingSize"
+COLUMN Quantity FORMAT 9999999.99 HEADING "Quantity"
+column Price format 999999999.99 heading "Price"
+column Amount format 999999999.99 heading "Amount"
+COLUMN Transactiontype FORMAT A60 HEADING "Transactiontype"
+COLUMN Currency FORMAT A60 HEADING "Currency"
+COLUMN UOM FORMAT A60 HEADING "UOM"
+column DiscountAmt format 999999999.99 heading "DiscountAmt"
+COLUMN ITemGrp FORMAT A60 HEADING "ITemGrp"
+spool C:\Unisales\Unisales.csv
+SELECT
+MSI.description "Brand",
+OEL.ordered_item "Ordered Item" ,
+OEL.inventory_item_id invdid,
+round((OEL.INVOICED_QUANTITY * OEL.UNIT_SELLING_PRICE),4)"Sales",
+SUM(NVL(OEL.INVOICED_QUANTITY,0)) "Qty",
+substr(hl.address1,1,20) "Address1" ,
+substr(hp.party_name,1,80) "Customer Name",
+oel.ship_to_org_id "customer id",
+OEL.order_quantity_uom "UOM",
+substr(OEL.return_reason_code,1,20) "Return Reason",
+substr(OEL.cust_po_number,1,20) "PO NUmber",
+OEH.order_number,
+OEL.unit_selling_price,
+oel.ship_to_org_id "CustID",
+hl.postal_code "Post",
+trim(ras.name) "Salesrep",
+OEL.ship_to_org_id "ship",
+OEL.schedule_ship_date "date"
+FROM OE_ORDER_HEADERS_ALL OEH,
+  OE_ORDER_LINES_ALL OEL,
+  RA_SALESREPS_ALL RAS,
+  HZ_CUST_SITE_USES_ALL HCSU,
+  HZ_CUST_ACCT_SITES_ALL HCAS ,
+  HZ_PARTY_SITES HPS ,
+  HZ_CUST_ACCOUNTS HCA ,
+  HZ_PARTIES HP,
+  MTL_SYSTEM_ITEMS_B MSI,
+  CST_ITEM_COSTS CSI,
+  RA_CUSTOMER_TRX_ALL RCTA,
+  HZ_LOCATIONS HL,
+  MTL_UOM_CLASS_CONVERSIONS MUC,
+  ra_customer_trx_lines_all ral
+WHERE 1         = 1
+AND MUC.INVENTORY_ITEM_ID (+)  =MSI.INVENTORY_ITEM_ID
+AND MUC.TO_UOM_CODE (+) ='CT'
+AND TRUNC(RCTA.trx_date) BETWEEN ('01'
+ || SUBSTR(TO_CHAR(SYSDATE),3,9))
+AND TRUNC(LAST_DAY(CURRENT_DATE ))
+AND MSI.SEGMENT1 LIKE 'ZB%'
+AND RCTA.INTERFACE_HEADER_ATTRIBUTE1 = TO_CHAR(OEH.ORDER_NUMBER)
+AND OEL.ORDER_QUANTITY_UOM           = MSI.PRIMARY_UOM_CODE
+AND RAS.SALESREP_ID                  =OEL.SALESREP_ID
+AND HCAS.CUST_ACCT_SITE_ID           = HCSU.CUST_ACCT_SITE_ID
+AND HPS.PARTY_SITE_ID                = HCAS.PARTY_SITE_ID
+AND HPS.PARTY_ID                     = HCA.PARTY_ID
+AND HPS.LOCATION_ID                  = HL.LOCATION_ID
+AND HP.PARTY_ID                      = HCA.PARTY_ID
+AND HCSU.SITE_USE_ID                 = OEH.ship_to_org_id
+AND OEH.HEADER_ID                    =OEL.HEADER_ID
+AND MSI.INVENTORY_ITEM_ID            = OEL.INVENTORY_ITEM_ID
+AND MSI.ORGANIZATION_ID              =OEL.ORG_ID
+AND CSI.INVENTORY_ITEM_ID            =MSI.INVENTORY_ITEM_ID
+AND CSI.ORGANIZATION_ID             IN (82)
+AND OEH.ORG_ID                       =81
+AND rcta.customer_trx_id = ral.customer_trx_id
+AND to_number(TRIM (ral.interface_line_attribute6)) = oel.line_id
+GROUP BY
+ MSI.description ,
+OEL.ordered_item  ,
+OEL.inventory_item_id ,
+OEL.INVOICED_QUANTITY ,
+OEL.UNIT_SELLING_PRICE,
+hl.address1 ,
+hp.party_name,
+oel.ship_to_org_id ,
+OEL.order_quantity_uom ,
+OEL.return_reason_code ,
+OEL.cust_po_number ,
+OEH.order_number,
+OEL.unit_selling_price,
+oel.ship_to_org_id ,
+hl.postal_code,
+ras.name,
+OEL.ship_to_org_id ,
+OEL.schedule_ship_date
+UNION
+SELECT
+MSI.description "Brand",
+OEL.ordered_item "Ordered Item" ,
+OEL.inventory_item_id invdid,
+round((OEL.INVOICED_QUANTITY * OEL.UNIT_SELLING_PRICE),4)"Sales",
+SUM(NVL(OEL.INVOICED_QUANTITY,0)) "Qty",
+substr(hl.address1,1,20) "Address1" ,
+substr(hp.party_name,1,80) "Customer Name",
+oel.ship_to_org_id "customer id",
+OEL.order_quantity_uom "UOM",
+OEL.return_reason_code "Return Reason",
+OEL.cust_po_number "PO NUmber",
+OEH.order_number,
+OEL.unit_selling_price,
+oel.ship_to_org_id "CustID",
+hl.postal_code "Post",
+trim(ras.name) "Salesrep",
+OEL.ship_to_org_id "ship",
+OEL.schedule_ship_date "date"
+FROM OE_ORDER_HEADERS_ALL OEH,
+  OE_ORDER_LINES_ALL OEL,
+  RA_SALESREPS_ALL RAS,
+  HZ_CUST_SITE_USES_ALL HCSU,
+  HZ_CUST_ACCT_SITES_ALL HCAS ,
+  HZ_PARTY_SITES HPS ,
+  HZ_CUST_ACCOUNTS HCA ,
+  HZ_PARTIES HP,
+  MTL_SYSTEM_ITEMS_B MSI,
+  CST_ITEM_COSTS CSI,
+  MTL_UOM_CLASS_CONVERSIONS MUC,
+  RA_CUSTOMER_TRX_ALL RCTA,
+  HZ_LOCATIONS HL,
+  ra_customer_trx_lines_all ral
+WHERE 1 = 1
+AND TRUNC(RCTA.trx_date) BETWEEN ('01'
+ || SUBSTR(TO_CHAR(SYSDATE),3,9))
+AND TRUNC(LAST_DAY(CURRENT_DATE ))
+AND MSI.SEGMENT1 LIKE 'ZB%'
+AND HPS.LOCATION_ID               =HL.LOCATION_ID
+AND RCTA.INTERFACE_HEADER_ATTRIBUTE1 = TO_CHAR(OEH.ORDER_NUMBER)
+AND MUC.TO_UOM_CODE                  =OEL.ORDER_QUANTITY_UOM
+AND MUC.INVENTORY_ITEM_ID            =MSI.INVENTORY_ITEM_ID
+AND MUC.TO_UOM_CODE                  =OEL.ORDER_QUANTITY_UOM
+AND RAS.SALESREP_ID                  =OEL.SALESREP_ID
+AND HCAS.CUST_ACCT_SITE_ID           = HCSU.CUST_ACCT_SITE_ID
+AND HPS.PARTY_SITE_ID                = HCAS.PARTY_SITE_ID
+AND HPS.PARTY_ID                     = HCA.PARTY_ID
+AND HP.PARTY_ID                      = HCA.PARTY_ID
+AND HCSU.SITE_USE_ID                 = OEH.ship_to_org_id
+AND OEH.HEADER_ID                    =OEL.HEADER_ID
+AND MSI.INVENTORY_ITEM_ID            = OEL.INVENTORY_ITEM_ID
+AND MSI.ORGANIZATION_ID              =OEL.ORG_ID
+AND CSI.INVENTORY_ITEM_ID            =MSI.INVENTORY_ITEM_ID
+AND CSI.ORGANIZATION_ID             IN (82)
+AND OEH.ORG_ID                       =81
+AND rcta.customer_trx_id = ral.customer_trx_id
+AND to_number(TRIM (ral.interface_line_attribute6)) = oel.line_id
+GROUP BY
+ MSI.description ,
+OEL.ordered_item  ,
+OEL.inventory_item_id ,
+OEL.INVOICED_QUANTITY ,
+OEL.UNIT_SELLING_PRICE,
+hl.address1 ,
+hp.party_name,
+oel.ship_to_org_id ,
+OEL.order_quantity_uom ,
+OEL.return_reason_code ,
+OEL.cust_po_number ,
+OEH.order_number,
+OEL.unit_selling_price,
+oel.ship_to_org_id ,
+hl.postal_code,
+ras.name,
+OEL.ship_to_org_id ,
+OEL.schedule_ship_date
+/
+spool off
+set feedback on
+set heading on
+exit

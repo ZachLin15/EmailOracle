@@ -90,22 +90,12 @@ if __name__ == "__main__":
         'use_tls': True
     }
     recipients = [  'Huslinda.husin@allexcel.com.my',
-                    'fariz.noryatim@allexcel.com.my',
-                    'huimin@allswelltrading.com.sg',
                     'serene@allswelltrading.com.sg',
                     'cheryl.tan@allswelltrading.com.sg',
                     'Jimmy.choo@allswelltrading.com.sg',
                     'gary.teo@allswelltrading.com.sg',
-                    'beeluan.chia@allswelltrading.com.sg',
-                    'ariella.lee@allswelltrading.com.sg',
                     'elaine@lshworld.com',
                     'cy.lee@lshworld.com',
-                    'sabrin.fong@allexcel.com.my',
-                    'meifung.chong@allexcel.com.my',
-                    'paul.wee@allswelltrading.com.sg',
-                    'diana.khalid@allswelltrading.com.sg',
-                    'caroltoh@allswelltrading.com.sg',
-                    'lucia@allswelltrading.com.sg',
                     'zhenglin@limsianghuat.com',
                     'amore@lshworld.com'
 
