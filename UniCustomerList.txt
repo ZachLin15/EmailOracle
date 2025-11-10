@@ -1,0 +1,82 @@
+-- UniCustomerList.sql (For SQL*Plus execution)
+
+-- 1. Connect to the database
+CONNECT apps/apps@192.168.200.179:1521/erpp
+
+-- 2. CRITICAL: Set parameters for clean CSV output
+SET ECHO OFF
+SET FEEDBACK OFF
+SET PAGESIZE 0        -- CRITICAL: Removes all auto-generated headers, footers, and blank lines
+SET HEADING OFF       -- CRITICAL: Ensures no *automatic* column names are printed
+SET LINESIZE 5000     -- Prevents line wrapping
+SET TRIMSPOOL ON      -- Removes trailing spaces
+SET TERMOUT OFF       -- Suppress screen output
+-- Use ANSI Date Literals for date reliability
+ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD';
+
+-- 3. Start spooling (writing) to the CSV file
+SPOOL C:\Unisales\UniCustomerList.csv
+
+-- 4. Query with Manual Header using UNION ALL
+-- Both SELECTs must produce one single, concatenated string column.
+SELECT
+    -- MANUAL HEADER LINE: Must match the number of columns and desired names
+    'CUSTOMER_ID,CUSTOMER_NAME,SITE_CODE,ADDRESS_LINE_1,SALES_REP_CODE,CUSTOMER_CLASS' AS OUTPUT_LINE
+FROM
+    DUAL
+UNION ALL
+-- DATA: Columns are manually concatenated with ',' and NULLs are handled (NVL)
+SELECT
+    -- Use NVL(TO_CHAR(column), '') to handle potential NULL values gracefully
+    NVL(TO_CHAR(Hp.PARTY_ID), '') || ',' ||
+    REPLACE(TRIM(hp.party_name), ',', ' ') || ',' ||
+    NVL(TO_CHAR(RCT.SHIP_TO_SITE_USE_ID), '') || ',' ||
+    REPLACE(TRIM(HL.ADDRESS1), ',', '') || ',' ||
+    TRIM(reps.name) || ',' ||
+    NVL(hca.customer_class_code, '') AS OUTPUT_LINE
+FROM
+    oe_order_lines_all OEL,
+    OE_ORDER_HEADERS_ALL OEH,
+    RA_CUSTOMER_TRX_ALL RCT,
+    RA_CUSTOMER_TRX_LINES_ALL rctl ,
+    HZ_CUST_SITE_USES_ALL HCSU,
+    HZ_CUST_ACCT_SITES_ALL HCAS,
+    HZ_CUST_ACCOUNTS HCA,
+    HZ_PARTY_SITES HPS,
+    HZ_PARTIES HP,
+    HZ_LOCATIONS HL,
+    ra_salesreps_all reps,
+    MTL_SYSTEM_ITEMS_B MSI
+WHERE 1 = 1
+AND OEH.HEADER_ID = OEL.HEADER_ID
+AND RCT.INTERFACE_HEADER_ATTRIBUTE1 = TO_NUMBER(OEH.ORDER_NUMBER)
+AND RCTL.INTERFACE_LINE_ATTRIBUTE6 = OEL.LINE_ID
+AND RCTL.CUSTOMER_TRX_ID = RCT.CUSTOMER_TRX_ID
+AND MSI.INVENTORY_ITEM_ID = RCTL.INVENTORY_ITEM_ID
+AND reps.SALESREP_ID = OEL.SALESREP_ID
+AND HCSU.SITE_USE_ID = rct.ship_to_site_use_id
+AND HCSU.CUST_ACCT_SITE_ID = HCAS.CUST_ACCT_SITE_ID
+AND HCAS.CUST_ACCOUNT_ID = HCA.CUST_ACCOUNT_ID
+AND HPS.PARTY_SITE_ID = HCAS.PARTY_SITE_ID
+AND HCA.PARTY_ID = Hp.PARTY_ID
+AND HPS.PARTY_ID = HP.PARTY_ID
+AND HCAS.PARTY_SITE_ID = HPS.PARTY_SITE_ID
+AND HPS.LOCATION_ID = HL.LOCATION_ID
+AND MSI.SEGMENT1 LIKE 'ZB%'
+AND oel.invoiced_quantity <> 0
+AND MSI.ORGANIZATION_ID = 82
+-- Using safe ANSI date literals:
+AND TRUNC(RCT.CREATION_DATE) BETWEEN DATE '2024-01-01' AND DATE '2026-12-31'
+GROUP BY
+    Hp.PARTY_ID,
+    REPLACE(TRIM(hp.party_name), ',', ' '),
+    RCT.SHIP_TO_SITE_USE_ID,
+    REPLACE(TRIM(HL.ADDRESS1), ',', ''),
+    TRIM(reps.name),
+    hca.customer_class_code;
+
+-- 5. Stop spooling and close the file
+SPOOL OFF
+
+-- 6. Exit SQL*Plus to return control to the calling script/session
+EXIT

@@ -1,0 +1,145 @@
+CONNECT apps/apps@192.168.200.179:1521/erpp
+
+set echo off
+set feedback off
+SET TERMOUT OFF
+--set heading off
+set linesize 10000
+set pagesize 10000
+SET UNDERLINE OFF
+SET HEADSEP OFF
+SET TRIMSPOOL ON
+SET EMBEDDED ON
+SET FEEBACK OFF
+SET TRIMOUT ON  
+set colsep ','
+column dcol new_value mydate noprint
+select to_char(sysdate,'YYMM') dcol from dual;
+COLUMN Category FORMAT A30 HEADING "Category"
+COLUMN Class FORMAT A30 HEADING "Class"
+COLUMN CustomerName FORMAT A60 HEADING "CustomerName"
+COLUMN Brands FORMAT A20 HEADING "Brands"
+COLUMN ItemCode FORMAT A20 HEADING "ItemCode"
+COLUMN SKUDesciption FORMAT A50 HEADING "SKUDesciption"
+COLUMN PackSize FORMAT A20 HEADING "PackSize"
+column Unit format 99 heading "Unit"
+COLUMN TYPE FORMAT A15 HEADING "TYPE"
+COLUMN CHAIN FORMAT A20 HEADING "CHAIN" 
+COLUMN SalesRep FORMAT A10 HEADING "SalesRep"
+COLUMN Addr1 FORMAT A150 HEADING "Addr1"
+COLUMN po FORMAT A150 HEADING "po"
+column dcol new_value mydate noprint
+select to_char(sysdate,'YYYYMMDD') dcol from dual;
+SPOOL C:/ZHSALES/ZHSALES.csv
+SELECT TO_CHAR(TRUNC(rctl.creation_date),'DD-MM-YYYY') "�nvoice Date",
+  rct.trx_number "Invoice #",
+  CASE
+    WHEN trim(hca.customer_class_code) LIKE 'WHOL%'
+    THEN 'WHOLESALE'
+    ELSE TRIM(hca.CUSTOMER_CLASS_CODE)
+  END "CLASS",
+  CASE
+    WHEN TRIM(HP.CATEGORY_CODE) LIKE 'WHOL%'
+    THEN 'WHOLESALE'
+    WHEN TRIM(HP.CATEGORY_CODE) LIKE 'INDUS%'
+    THEN 'INDUS/COMM CANTEEN'
+    WHEN TRIM(HP.CATEGORY_CODE) LIKE 'FOOD%'
+    THEN 'FOODCOURT'
+    WHEN TRIM(HP.CATEGORY_CODE) LIKE 'COFFEE%'
+    THEN 'COFFEESHOP'
+    WHEN TRIM(HP.CATEGORY_CODE) LIKE 'ETHNIC%'
+    THEN 'ETHNIC'
+    ELSE TRIM(HP.CATEGORY_CODE)
+  END "Category",
+  oel.ship_to_org_id "Ship Code",
+  trim(hp.party_name) "Cust�mer Name",
+  --hl.postal_code "Postal Code",
+  trim(msi.attribute11) "Brands",
+  trim(oel.ordered_item) "ItemCode",
+  SUBSTR(msi.DESCRIPTION,1,INSTR(msi.DESCRIPTION,'-',1) -1) "SKUDesciption",
+  SUBSTR(msi.DESCRIPTION,                               -11,INSTR(msi.DESCRIPTION,'-',1) +1) "PackSize",
+  CONV.conversion_rate "Unit",
+  trim(reps.name) "SalesRep" ,
+  SUM(oel.invoiced_quantity* oel.unit_selling_price) "Sales Amount " ,
+  CASE
+    WHEN oel.order_quantity_uom =msi.primary_uom_code
+    THEN SUM(oel.invoiced_quantity)
+    ELSE SUM(oel.invoiced_quantity * CONV.conversion_rate )
+  END LOOSEQTY,
+  CASE
+    WHEN oel.order_quantity_uom =msi.primary_uom_code
+    THEN SUM(oel.invoiced_quantity/CONV.CONVERSION_RATE)
+    ELSE SUM(oel.invoiced_quantity)
+  END CTNQTY,
+  --trim(REPLACE(hl.address1,chr(44), ' ')) "Addr1" ,
+  CASE
+    WHEN TRIM(Hca.ATTRIBUTE1) LIKE 'CHAIN%'
+    THEN TRIM(REPLACE(Hca.attribute2,CHR(13),''))
+    ELSE ' '
+  END "TYPE"
+FROM oe_order_lines_all OEL,
+  OE_ORDER_HEADERS_ALL OEH,
+  RA_CUSTOMER_TRX_ALL RCT,
+  RA_CUSTOMER_TRX_LINES_ALL rctl ,
+  HZ_CUST_SITE_USES_ALL HCSU,
+  HZ_CUST_ACCT_SITES_ALL HCAS,
+  HZ_CUST_ACCOUNTS HCA,
+  HZ_PARTY_SITES HPS,
+  HZ_PARTIES HP,
+  HZ_LOCATIONS HL,
+  ra_salesreps_all reps,
+  MTL_SYSTEM_ITEMS_B MSI,
+  mtl_uom_class_conversions conv
+WHERE 1                             = 1
+AND OEH.HEADER_ID                   =OEL.HEADER_ID
+AND RCT.INTERFACE_HEADER_ATTRIBUTE1 =TO_NUMBER(OEH.ORDER_NUMBER)
+AND TRUNC(RCT.trx_date) BETWEEN ('01'
+|| SUBSTR(TO_CHAR(SYSDATE),3,9))
+AND TRUNC(LAST_DAY(CURRENT_DATE ))
+--AND trUNC(RCT.trx_date) between ('1-JUN-2023') and ('30-JUN-2023')
+--AND HP.PARTY_NAME LIKE 'RedMart%'
+AND RCTL.INTERFACE_LINE_ATTRIBUTE6=OEL.LINE_ID
+AND RCTL.CUSTOMER_TRX_ID          =RCT.CUSTOMER_TRX_ID
+AND MSI.INVENTORY_ITEM_ID         =RCTL.INVENTORY_ITEM_ID
+AND OEH.SALESREP_ID              =REPS.SALESREP_ID
+AND HCSU.SITE_USE_ID              = rct.ship_to_site_use_id
+AND HCSU.CUST_ACCT_SITE_ID        = HCAS.CUST_ACCT_SITE_ID
+AND HCAS.CUST_ACCOUNT_ID          = HCA.CUST_ACCOUNT_ID
+AND HPS.PARTY_SITE_ID             = HCAS.PARTY_SITE_ID
+AND HCA.PARTY_ID                  = Hp.PARTY_ID
+AND HPS.PARTY_ID                  = HP.PARTY_ID
+AND HCAS.PARTY_SITE_ID            = HPS.PARTY_SITE_ID
+AND HPS.LOCATION_ID               =HL.LOCATION_ID
+AND MSI.segment1 LIKE 'ZH%'
+--AND (MSI.attribute11 LIKE 'ALL%'
+--OR msi.attribute11 LIKE 'RED%')
+AND oel.invoiced_quantity <> 0
+AND rctl.description NOT LIKE '100%'
+AND MSI.ORGANIZATION_ID  =82
+AND MSI.INVENTORY_ITEM_ID=conv.INVENTORY_ITEM_ID
+GROUP BY TO_CHAR(TRUNC(rctl.creation_date),'DD-MM-YYYY'),
+  rct.trx_number ,
+  hca.customer_class_code,
+  HP.CATEGORY_CODE,
+  oel.ship_to_org_id ,
+  trim(hp.party_name) ,
+  hl.postal_code ,
+  trim(msi.attribute11) ,
+  trim(oel.ordered_item),
+  SUBSTR(msi.DESCRIPTION,1,INSTR(msi.DESCRIPTION,'-',1) -1) ,
+  SUBSTR(msi.DESCRIPTION,                               -11,INSTR(msi.DESCRIPTION,'-',1) +1) ,
+  CONV.conversion_rate ,
+  trim(reps.name) ,
+  hca.attribute1,
+  hca.attribute2,
+  hl.address1,
+  oel.invoiced_quantity,
+  oel.order_quantity_uom ,
+  msi.primary_uom_code ,
+oel.unit_selling_price
+/   
+spool off   
+set feedback on   
+set heading on   
+exit   
+

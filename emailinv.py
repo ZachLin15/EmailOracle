@@ -30,7 +30,7 @@ def send_email(to_address, subject, body,excel_filepath):
 
     # Create the email message
     msg = MIMEMultipart()
-    msg['Subject'] = subject
+    msg['Subject'] = "Combined "
     msg['From'] = email_config['sender_email']
     msg['To'] = to_address
     msg['Cc'] = "accounts1@lshworld.com"
@@ -78,7 +78,7 @@ if os.path.exists(extracted_file):
         for index, row in df.iterrows():
             customer_email = row['email']
             customer_company = row['company']
-            customer_file = os.path.join(r"X:\PRINTINVOICE\TEST_INPUT\pdf4\filtered",row['file_name'])
+            customer_file = r"C:\Users\USER\OneDrive\XN report\Combined\Combined Available Stock Report_ADMIN_20251017033321358.xlsx"
 
             # Customize the subject and body of the email
             email_subject = f"Updated Invoice for {customer_company}"
@@ -94,7 +94,7 @@ Best regards,
 Lim Siang Huat Pte Ltd"""
 
             # Call the function to send the email
-            send_email(customer_email, email_subject, email_body,customer_file)
+            send_email("limsiangretail@gmail.com", email_subject, email_body,customer_file)
 
     except Exception as e:
         print(f"\nError reading the Excel file or sending emails: {e}")

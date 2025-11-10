@@ -1,0 +1,42 @@
+-- UniItemMaster.txt (Verified for Clean CSV with Manual Header)
+
+-- 1. Connect to the database
+CONNECT apps/apps@192.168.200.179:1521/erpp
+
+-- 2. CRITICAL: Set parameters to suppress ALL SQL*Plus formatting
+SET ECHO OFF
+SET FEEDBACK OFF
+SET PAGESIZE 0        -- MUST be 0
+SET HEADING OFF       -- MUST be OFF
+SET LINESIZE 1000
+SET TRIMSPOOL ON
+SET TERMOUT OFF       -- Suppress screen output (optional, but ensures a cleaner run)
+
+-- 3. Start spooling (writing) to the CSV file
+SPOOL C:\Unisales\UniItemMaster.csv
+
+-- 4. Query with Manual Header using UNION ALL
+SELECT
+    -- This is the manual HEADER LINE:
+    'INVENTORY_ITEM_ID,ITEM_NUMBER,DESCRIPTION' AS OUTPUT_LINE
+FROM
+    DUAL
+UNION ALL
+-- This is the DATA:
+SELECT
+    b.INVENTORY_ITEM_ID || ',' ||
+    b.segment1 || ',' ||
+    b.description AS OUTPUT_LINE
+FROM
+    MTL_SYSTEM_ITEMS b
+WHERE b.segment1 like 'ZB%'
+AND B.INVOICE_ENABLED_FLAG = 'Y'
+AND B.inventory_item_status_code = 'Active'
+AND b.description NOT LIKE '%(DONT USE)%'
+AND b.description NOT LIKE '%(DISCON)%';
+
+-- 5. Stop spooling and close the file
+SPOOL OFF
+
+-- 6. Exit SQL*Plus
+EXIT
